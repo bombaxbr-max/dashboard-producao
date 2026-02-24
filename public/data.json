@@ -1,0 +1,28 @@
+{
+  "lastUpdated": "2026-02-24T14:45:00Z",
+  "kpis": [
+    { "label": "HC Total", "value": "1.250", "trend": "+5%", "direction": "up", "status": "success", "icon": "Users" },
+    { "label": "Altas Concluídas", "value": "842", "trend": "-2%", "direction": "down", "status": "warning", "icon": "CheckCircle" },
+    { "label": "Projeção LIS", "value": "95%", "trend": "+1%", "direction": "up", "status": "success", "icon": "TrendingUp" },
+    { "label": "Produção P.U", "value": "4.502", "trend": "+12%", "direction": "up", "status": "success", "icon": "Activity" },
+    { "label": "GAP (Meta vs Real)", "value": "-158", "trend": "-8%", "direction": "down", "status": "danger", "icon": "Target" },
+    { "label": "Eficiência (%)", "value": "88.5%", "trend": "+3%", "direction": "up", "status": "success", "icon": "Zap" },
+    { "label": "SLA", "value": "98.2%", "trend": "-0.5%", "direction": "down", "status": "success", "icon": "ShieldCheck" },
+    { "label": "Backlog", "value": "125", "trend": "+15%", "direction": "up", "status": "danger", "icon": "Clock" }
+  ],
+  "production": [
+    { "empresa": "FIBRA S.A", "hc": 150, "pu": 45, "altasConcluidas": 120, "iniciadas": 30, "naoIniciadas": 10, "improdutivas": 5, "servico": 15, "b2b": 25, "lis": 10, "meta": 130, "gap": -10, "projecaoPu": 48, "eficiencia": 92.3 },
+    { "empresa": "GIGA CONNECT", "hc": 210, "pu": 62, "altasConcluidas": 185, "iniciadas": 45, "naoIniciadas": 15, "improdutivas": 8, "servico": 30, "b2b": 40, "lis": 12, "meta": 200, "gap": -15, "projecaoPu": 65, "eficiencia": 89.1 },
+    { "empresa": "NET SPEED", "hc": 180, "pu": 55, "altasConcluidas": 170, "iniciadas": 20, "naoIniciadas": 5, "improdutivas": 3, "servico": 25, "b2b": 35, "lis": 15, "meta": 160, "gap": 10, "projecaoPu": 58, "eficiencia": 96.5 },
+    { "empresa": "BRASIL TECH", "hc": 95, "pu": 28, "altasConcluidas": 70, "iniciadas": 15, "naoIniciadas": 12, "improdutivas": 10, "servico": 10, "b2b": 15, "lis": 5, "meta": 90, "gap": -20, "projecaoPu": 30, "eficiencia": 74.2 },
+    { "empresa": "DATA LINK", "hc": 320, "pu": 98, "altasConcluidas": 310, "iniciadas": 50, "naoIniciadas": 20, "improdutivas": 15, "servico": 45, "b2b": 60, "lis": 20, "meta": 300, "gap": 10, "projecaoPu": 102, "eficiencia": 98.4 },
+    { "empresa": "CONECTA+", "hc": 110, "pu": 35, "altasConcluidas": 85, "iniciadas": 25, "naoIniciadas": 18, "improdutivas": 12, "servico": 15, "b2b": 20, "lis": 8, "meta": 100, "gap": -15, "projecaoPu": 38, "eficiencia": 78.5 },
+    { "empresa": "SOLUÇÕES TI", "hc": 85, "pu": 25, "altasConcluidas": 75, "iniciadas": 10, "naoIniciadas": 5, "improdutivas": 4, "servico": 12, "b2b": 18, "lis": 6, "meta": 80, "gap": -5, "projecaoPu": 27, "eficiencia": 87.2 },
+    { "empresa": "MAX FIBER", "hc": 240, "pu": 70, "altasConcluidas": 215, "iniciadas": 40, "naoIniciadas": 25, "improdutivas": 18, "servico": 35, "b2b": 45, "lis": 10, "meta": 230, "gap": -15, "projecaoPu": 75, "eficiencia": 88.3 },
+    { "empresa": "IP REDES", "hc": 130, "pu": 40, "altasConcluidas": 125, "iniciadas": 15, "naoIniciadas": 8, "improdutivas": 2, "servico": 20, "b2b": 30, "lis": 12, "meta": 120, "gap": 5, "projecaoPu": 42, "eficiencia": 97.1 }
+  ],
+  "alerts": [
+    { "id": 1, "type": "critical", "message": "GAP Negativo em BRASIL TECH: Meta não atingida", "time": "14:20" },
+    { "id": 2, "type": "warning", "message": "Eficiência abaixo de 80% em CONECTA+", "time": "14:35" }
+  ]
+}

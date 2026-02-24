@@ -9,17 +9,18 @@ O dashboard consome um arquivo `JSON` externo. Para que a atualização automát
 2. O sistema de sincronização do GitHub (GitHub Desktop ou CLI) sobe o arquivo para o repositório.
 3. O Dashboard lê a URL **RAW** do GitHub (Ex: `https://raw.githubusercontent.com/usuario/repo/main/public/data.json`).
 
-## 🛠️ Configuração de Produção
+## 📊 Estrutura do JSON (Excel VBA)
 
-No arquivo `src/App.jsx`, altere a constante `JSON_URL`:
+O dashboard foi ajustado para ler o formato padrão de exportação do seu Excel:
+- **Praça/Empresa**: Coluna `PORTO ALEGRE`
+- **HC**: Coluna `col_2`
+- **P.U**: Coluna `col_3`
+- **Altas**: Coluna `ALTAS`
+- **Meta**: Coluna `col_25`
+- **Eficácia**: Coluna `col_28` (valor decimal, ex: 0.68 para 68%)
+- **GAP**: Coluna `col_24`
 
-```javascript
-// Local (Desenvolvimento)
-const JSON_URL = '/data.json'; 
-
-// Produção (URL RAW do GitHub)
-const JSON_URL = 'https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/public/data.json';
-```
+Certifique-se de que o seu VBA gere as chaves com esses nomes exatos.
 
 ## 📦 Deploy na Vercel
 

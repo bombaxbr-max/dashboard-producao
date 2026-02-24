@@ -13,11 +13,10 @@ const ProductionTable = ({ data }) => {
         const scroll = () => {
             scrollContainer.scrollTop += scrollSpeed;
 
-            // If reached bottom, jump back to top (seamless loop simulation)
             if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight) {
                 setTimeout(() => {
-                    scrollContainer.scrollTop = 0;
-                }, 2000); // Pause at bottom before reset
+                    if (scrollContainer) scrollContainer.scrollTop = 0;
+                }, 3000);
             }
 
             animationId = requestAnimationFrame(scroll);
@@ -28,85 +27,60 @@ const ProductionTable = ({ data }) => {
         return () => cancelAnimationFrame(animationId);
     }, [data]);
 
-    // Calculate totals
-    const totals = data.reduce((acc, curr) => ({
-        hc: acc.hc + curr.hc,
-        pu: acc.pu + curr.pu,
-        altas: acc.altas + curr.altasConcluidas,
-        iniciadas: acc.iniciadas + curr.iniciadas,
-        naoIniciadas: acc.naoIniciadas + curr.naoIniciadas,
-        improdutivas: acc.improdutivas + curr.improdutivas,
-        servico: acc.servico + curr.servico,
-        b2b: acc.b2b + curr.b2b,
-        lis: acc.lis + curr.lis,
-        meta: acc.meta + curr.meta,
-        gap: acc.gap + curr.gap,
-        projecao: acc.projecao + curr.projecaoPu,
-    }), { hc: 0, pu: 0, altas: 0, iniciadas: 0, naoIniciadas: 0, improdutivas: 0, servico: 0, b2b: 0, lis: 0, meta: 0, gap: 0, projecao: 0 });
-
-    const totalEficiencia = (totals.altas / totals.meta * 100).toFixed(1);
-
     return (
         <div className="table-container">
             <div className="table-wrapper" ref={scrollRef}>
                 <table>
                     <thead>
                         <tr>
-                            <th>Empresa</th>
+                            <th>Praça / Empresa</th>
                             <th>HC</th>
                             <th>P.U</th>
                             <th>Altas</th>
-                            <th>Iniciadas</th>
-                            <th>N. Iniciadas</th>
-                            <th>Improd.</th>
+                            <th>Inic.</th>
+                            <th>N. Inic.</th>
+                            <th>Impr.</th>
                             <th>Serviço</th>
                             <th>B2B</th>
                             <th>LIS</th>
                             <th>Meta</th>
                             <th>GAP</th>
                             <th>Proj. P.U</th>
-                            <th>Eficiência</th>
+                            <th>Eficácia</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((row, idx) => (
-                            <tr key={idx}>
-                                <td><strong>{row.empresa}</strong></td>
-                                <td>{row.hc}</td>
-                                <td>{row.pu}</td>
-                                <td>{row.altasConcluidas}</td>
-                                <td>{row.iniciadas}</td>
-                                <td>{row.naoIniciadas}</td>
-                                <td>{row.improdutivas}</td>
-                                <td>{row.servico}</td>
-                                <td>{row.b2b}</td>
-                                <td>{row.lis}</td>
-                                <td>{row.meta}</td>
-                                <td className={row.gap >= 0 ? 'value-pos' : 'value-neg'}>
-                                    {row.gap}
-                                </td>
-                                <td>{row.projecaoPu}</td>
-                                <td style={{ color: row.eficiencia < 80 ? 'var(--danger)' : 'var(--success)' }}>
-                                    {row.eficiencia}%
-                                </td>
-                            </tr>
-                        ))}
-                        <tr className="total-row">
-                            <td>TOTAL GERAL</td>
-                            <td>{totals.hc}</td>
-                            <td>{totals.pu}</td>
-                            <td>{totals.altas}</td>
-                            <td>{totals.iniciadas}</td>
-                            <td>{totals.naoIniciadas}</td>
-                            <td>{totals.improdutivas}</td>
-                            <td>{totals.servico}</td>
-                            <td>{totals.b2b}</td>
-                            <td>{totals.lis}</td>
-                            <td>{totals.meta}</td>
-                            <td className={totals.gap >= 0 ? 'value-pos' : 'value-neg'}>{totals.gap}</td>
-                            <td>{totals.projecao}</td>
-                            <td>{totalEficiencia}%</td>
-                        </tr>
+                        {data.map((row, idx) => {
+                            const label = row["PORTO ALEGRE"];
+                            if (label === "EMPRESA" || label === "ALTAS") return null;
+
+                            const isHeader = !row["col_2"] && label && label !== "TOTAL";
+                            const isTotal = label === "TOTAL" || label === "RS CAPITAL";
+
+                            return (
+                                <tr key={idx} className={`${isTotal ? 'total-row' : ''}`}
+                                    style={isHeader ? { background: '#1e293b', fontWeight: 'bold', color: '#3b82f6' } : {}}>
+                                    <td><strong>{label}</strong></td>
+                                    <td>{row["col_2"] ?? '-'}</td>
+                                    <td>{typeof row["col_3"] === 'number' ? row["col_3"].toFixed(2) : (row["col_3"] || '-')}</td>
+                                    <td>{row["ALTAS"] ?? 0}</td>
+                                    <td>{row["col_5"] ?? 0}</td>
+                                    <td>{row["col_6"] ?? 0}</td>
+                                    <td>{row["col_7"] ?? 0}</td>
+                                    <td>{row["SERVIO"] || row["SERVIO"] || row["SERVIÇO"] || 0}</td>
+                                    <td>{row["B2B"] ?? 0}</td>
+                                    <td>{row["LIS"] ?? 0}</td>
+                                    <td>{typeof row["col_25"] === 'number' ? row["col_25"].toFixed(0) : (row["col_25"] || 0)}</td>
+                                    <td className={row["col_24"] < 0 ? 'value-neg' : 'value-pos'}>
+                                        {typeof row["col_24"] === 'number' ? row["col_24"].toFixed(1) : (row["col_24"] || 0)}
+                                    </td>
+                                    <td>{typeof row["col_27"] === 'number' ? row["col_27"].toFixed(2) : (row["col_27"] || 0)}</td>
+                                    <td style={{ color: row["col_28"] < 0.6 ? 'var(--danger)' : 'var(--success)' }}>
+                                        {typeof row["col_28"] === 'number' ? (row["col_28"] * 100).toFixed(1) + '%' : (row["col_28"] || '0%')}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

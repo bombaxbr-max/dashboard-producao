@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDashboardData } from './hooks/useDashboardData';
 import KpiCard from './components/KpiCard';
 import ProductionTable from './components/ProductionTable';
@@ -6,8 +6,7 @@ import * as Icons from 'lucide-react';
 import './styles/main.css';
 
 const App = () => {
-  // Replace with your GitHub Raw URL in production
-  const JSON_URL = 'https://raw.githubusercontent.com/bombaxbr-max/dashboard-producao/refs/heads/main/public/data.json';
+  const JSON_URL = 'https://raw.githubusercontent.com/bombaxbr-max/dashboard-producao/main/public/data.json';
   const { data, loading, error, lastFetch, isStale } = useDashboardData(JSON_URL);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -16,20 +15,44 @@ const App = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Process data to extract KPIs and list
+  const processed = useMemo(() => {
+    if (!data || !Array.isArray(data)) return null;
+
+    const summaryRow = data.find(r => r["PORTO ALEGRE"] === "RS CAPITAL") ||
+      data.reverse().find(r => r["PORTO ALEGRE"] === "TOTAL");
+
+    // Restore array order if reversed
+    if (data.reverse) data.reverse();
+
+    const kpis = summaryRow ? [
+      { label: "HC Total", value: summaryRow["col_2"], trend: "Global", direction: "up", status: "success", icon: "Users" },
+      { label: "Altas Concl.", value: summaryRow["ALTAS"], trend: "Real", direction: "up", status: "success", icon: "CheckCircle" },
+      { label: "Proj. LIS", value: (summaryRow["col_26"] || 0).toFixed(1), trend: "Proj", direction: "up", status: "warning", icon: "TrendingUp" },
+      { label: "Produção P.U", value: (summaryRow["col_3"] || 0).toFixed(2), trend: "Média", direction: "up", status: "success", icon: "Activity" },
+      { label: "GAP", value: (summaryRow["col_24"] || 0).toFixed(0), trend: "Meta vs Real", direction: summaryRow["col_24"] < 0 ? "down" : "up", status: summaryRow["col_24"] < 0 ? "danger" : "success", icon: "Target" },
+      { label: "Eficácia (%)", value: ((summaryRow["col_28"] || 0) * 100).toFixed(1) + "%", trend: "Geral", direction: "up", status: summaryRow["col_28"] < 0.6 ? "danger" : "success", icon: "Zap" },
+      { label: "Meta Total", value: summaryRow["col_25"], trend: "Dia", direction: "up", status: "warning", icon: "ShieldCheck" },
+      { label: "Backlog", value: summaryRow["col_6"], trend: "N. Inic.", direction: "up", status: "danger", icon: "Clock" }
+    ] : [];
+
+    const production = data.filter(r => r["PORTO ALEGRE"] !== "EMPRESA" && r["col_2"] !== null);
+
+    return { kpis, production };
+  }, [data]);
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      if (document.exitFullscreen) document.exitFullscreen();
     }
   };
 
   const exportCSV = () => {
-    if (!data?.production) return;
-    const headers = Object.keys(data.production[0]).join(',');
-    const rows = data.production.map(row => Object.values(row).join(','));
+    if (!data) return;
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => Object.values(row).join(','));
     const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -60,7 +83,7 @@ const App = () => {
         <Icons.AlertTriangle size={64} color="var(--danger)" />
         <h2 style={{ marginTop: '1rem' }}>Erro ao carregar dados</h2>
         <p>{error}</p>
-        <button onClick={() => window.location.reload()} style={{ marginTop: '2rem', padding: '1rem 2rem' }}>Tentar Novamente</button>
+        <button onClick={() => window.location.reload()} style={{ marginTop: '2rem', padding: '1rem 2rem' }}>Recarregar</button>
       </div>
     );
   }
@@ -69,88 +92,83 @@ const App = () => {
     <div className="dashboard-container">
       {isStale && (
         <div className="stale-overlay">
-          <Icons.AlertOctagon size={20} inline /> DADOS DESATUALIZADOS (SINCRO FALHOU)
+          <Icons.AlertOctagon size={20} /> DADOS DESATUALIZADOS (EXCEL NÃO SINCRONIZOU)
         </div>
       )}
 
-      {/* HEADER */}
       <header className="dashboard-header">
         <div className="logo-section">
           <div className="logo-placeholder">NOC</div>
           <div>
             <h1 style={{ fontSize: '1.25rem', fontWeight: 800 }}>DASHBOARD OPERACIONAL</h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>MISSION CONTROL | v1.0</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>MISSION CONTROL | v1.2 (Excel Mode)</p>
           </div>
         </div>
 
         <div className="header-info">
           <div className="sync-status">
             <div className={`status-dot ${isStale ? 'stale' : ''}`}></div>
-            <span>Última Sincro: {lastFetch?.toLocaleTimeString()}</span>
+            <span>Sincro: {lastFetch?.toLocaleTimeString()}</span>
           </div>
 
           <div className="clock">
-            {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            {currentTime.toLocaleTimeString('pt-BR')}
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={exportCSV} title="Exportar CSV" style={{ background: 'none', border: '1px solid var(--card-border)', color: 'white', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}>
+            <button onClick={exportCSV} className="btn-icon">
               <Icons.Download size={18} />
             </button>
-            <button onClick={toggleFullscreen} title="Modo TV / Fullscreen" style={{ background: 'var(--accent-color)', border: 'none', color: 'white', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}>
+            <button onClick={toggleFullscreen} className="btn-icon primary">
               <Icons.Maximize size={18} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* KPI GRID */}
       <section className="kpi-grid">
-        {data?.kpis.map((kpi, idx) => (
+        {processed?.kpis.map((kpi, idx) => (
           <KpiCard key={idx} {...kpi} />
         ))}
       </section>
 
-      {/* MAIN SECTION */}
       <main className="main-content">
-        <ProductionTable data={data?.production || []} />
+        <ProductionTable data={data || []} />
 
         <aside className="sidebar">
           <div className="sidebar-card">
-            <h3 className="sidebar-title"><Icons.Trophy size={16} /> Top Performance (PU)</h3>
+            <h3 className="sidebar-title"><Icons.Trophy size={16} /> Top P.U (Region)</h3>
             <div className="sidebar-list">
-              {(data?.production || [])
-                .sort((a, b) => b.pu - a.pu)
+              {(processed?.production || [])
+                .filter(p => typeof p.col_3 === 'number')
+                .sort((a, b) => b.col_3 - a.col_3)
                 .slice(0, 5)
                 .map((emp, idx) => (
                   <div key={idx} className="ranking-item">
-                    <span>{idx + 1}. {emp.empresa}</span>
-                    <span style={{ color: 'var(--accent-color)', fontWeight: 700 }}>{emp.pu}</span>
+                    <span style={{ fontSize: '0.8rem' }}>{emp["PORTO ALEGRE"]}</span>
+                    <span style={{ color: 'var(--accent-color)', fontWeight: 700 }}>{(emp.col_3 || 0).toFixed(2)}</span>
                   </div>
                 ))}
             </div>
           </div>
 
           <div className="sidebar-card">
-            <h3 className="sidebar-title"><Icons.Bell size={16} /> Alertas Críticos</h3>
+            <h3 className="sidebar-title"><Icons.Bell size={16} /> Alertas de Eficácia</h3>
             <div className="sidebar-list">
-              {data?.alerts.map(alert => (
-                <div key={alert.id} className={`alert-item alert-${alert.type}`}>
-                  <strong>[{alert.time}]</strong> {alert.message}
-                </div>
-              ))}
-              {data?.production.filter(p => p.eficiencia < 80).map((p, idx) => (
-                <div key={`auto-${idx}`} className="alert-item alert-warning">
-                  Eficiência baixa em {p.empresa} ({p.eficiencia}%)
-                </div>
-              ))}
+              {(processed?.production || [])
+                .filter(p => typeof p.col_28 === 'number' && p.col_28 < 0.60 && p["PORTO ALEGRE"] !== "TOTAL")
+                .map((p, idx) => (
+                  <div key={idx} className="alert-item alert-critical">
+                    Eficácia crítica: {p["PORTO ALEGRE"]} ({((p.col_28 || 0) * 100).toFixed(1)}%)
+                  </div>
+                ))}
             </div>
           </div>
         </aside>
       </main>
 
       <footer style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-secondary)', padding: '0.2rem' }}>
-        Sincronizado automaticamente via GitHub JSON API • Power BI Wallboard Mode Active
+        Dashboard em tempo real • Conectado ao Repositório GitHub
       </footer>
     </div>
   );

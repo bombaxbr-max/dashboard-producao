@@ -7,7 +7,7 @@ import './styles/main.css';
 
 const App = () => {
   // Replace with your GitHub Raw URL in production
-  const JSON_URL = '/data.json';
+  const JSON_URL = 'https://raw.githubusercontent.com/bombaxbr-max/dashboard-producao/refs/heads/main/public/data.json';
   const { data, loading, error, lastFetch, isStale } = useDashboardData(JSON_URL);
   const [currentTime, setCurrentTime] = useState(new Date());
 

@@ -15,26 +15,34 @@ const App = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Process data to extract KPIs and list
+  // Helper safe number formatter
+  const safeNum = (val, decimals = 0) => {
+    if (val === null || val === undefined || val === "-" || isNaN(parseFloat(val))) return 0;
+    return parseFloat(val);
+  };
+
   const processed = useMemo(() => {
     if (!data || !Array.isArray(data)) return null;
 
-    const summaryRow = data.find(r => r["PORTO ALEGRE"] === "RS CAPITAL") ||
-      data.reverse().find(r => r["PORTO ALEGRE"] === "TOTAL");
+    // Tenta achar a linha de resumo (RS CAPITAL ou TOTAL)
+    // Usamos uma cópia para não alterar a ordem original do array
+    const dataCopy = [...data];
+    const summaryRow = dataCopy.find(r => r["PORTO ALEGRE"] === "RS CAPITAL") ||
+      dataCopy.find(r => r["PORTO ALEGRE"] === "TOTAL") ||
+      data[data.length - 1];
 
-    // Restore array order if reversed
-    if (data.reverse) data.reverse();
+    if (!summaryRow) return null;
 
-    const kpis = summaryRow ? [
-      { label: "HC Total", value: summaryRow["col_2"], trend: "Global", direction: "up", status: "success", icon: "Users" },
-      { label: "Altas Concl.", value: summaryRow["ALTAS"], trend: "Real", direction: "up", status: "success", icon: "CheckCircle" },
-      { label: "Proj. LIS", value: (summaryRow["col_26"] || 0).toFixed(1), trend: "Proj", direction: "up", status: "warning", icon: "TrendingUp" },
-      { label: "Produção P.U", value: (summaryRow["col_3"] || 0).toFixed(2), trend: "Média", direction: "up", status: "success", icon: "Activity" },
-      { label: "GAP", value: (summaryRow["col_24"] || 0).toFixed(0), trend: "Meta vs Real", direction: summaryRow["col_24"] < 0 ? "down" : "up", status: summaryRow["col_24"] < 0 ? "danger" : "success", icon: "Target" },
-      { label: "Eficácia (%)", value: ((summaryRow["col_28"] || 0) * 100).toFixed(1) + "%", trend: "Geral", direction: "up", status: summaryRow["col_28"] < 0.6 ? "danger" : "success", icon: "Zap" },
-      { label: "Meta Total", value: summaryRow["col_25"], trend: "Dia", direction: "up", status: "warning", icon: "ShieldCheck" },
-      { label: "Backlog", value: summaryRow["col_6"], trend: "N. Inic.", direction: "up", status: "danger", icon: "Clock" }
-    ] : [];
+    const kpis = [
+      { label: "HC Total", value: summaryRow["col_2"] || "0", trend: "Global", direction: "up", status: "success", icon: "Users" },
+      { label: "Altas Concl.", value: summaryRow["ALTAS"] || "0", trend: "Real", direction: "up", status: "success", icon: "CheckCircle" },
+      { label: "Proj. LIS", value: safeNum(summaryRow["col_26"]).toFixed(1), trend: "Proj", direction: "up", status: "warning", icon: "TrendingUp" },
+      { label: "Média P.U", value: safeNum(summaryRow["col_3"]).toFixed(2), trend: "Global", direction: "up", status: "success", icon: "Activity" },
+      { label: "GAP", value: safeNum(summaryRow["col_24"]).toFixed(0), trend: "Meta vs Real", direction: safeNum(summaryRow["col_24"]) < 0 ? "down" : "up", status: safeNum(summaryRow["col_24"]) < 0 ? "danger" : "success", icon: "Target" },
+      { label: "Eficácia (%)", value: (safeNum(summaryRow["col_28"]) * 100).toFixed(1) + "%", trend: "Geral", direction: "up", status: safeNum(summaryRow["col_28"]) < 0.6 ? "danger" : "success", icon: "Zap" },
+      { label: "Meta Dia", value: summaryRow["col_25"] || "0", trend: "Planejado", direction: "up", status: "warning", icon: "ShieldCheck" },
+      { label: "Backlog", value: summaryRow["col_6"] || "0", trend: "Pendentes", direction: "up", status: "danger", icon: "Clock" }
+    ];
 
     const production = data.filter(r => r["PORTO ALEGRE"] !== "EMPRESA" && r["col_2"] !== null);
 
@@ -49,41 +57,18 @@ const App = () => {
     }
   };
 
-  const exportCSV = () => {
-    if (!data) return;
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(row => Object.values(row).join(','));
-    const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows.join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "producao_dashboard.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   if (loading && !data) {
-    return (
-      <div className="dashboard-container">
-        <div className="skeleton" style={{ height: '60px', marginBottom: '1rem' }}></div>
-        <div className="kpi-grid">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="skeleton" style={{ height: '120px' }}></div>
-          ))}
-        </div>
-        <div className="skeleton" style={{ flex: 1, marginTop: '1rem' }}></div>
-      </div>
-    );
+    return <div className="dashboard-container"><div className="skeleton" style={{ height: '100%' }}></div></div>;
   }
 
   if (error && !data) {
     return (
-      <div className="dashboard-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <div className="dashboard-container" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
         <Icons.AlertTriangle size={64} color="var(--danger)" />
-        <h2 style={{ marginTop: '1rem' }}>Erro ao carregar dados</h2>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()} style={{ marginTop: '2rem', padding: '1rem 2rem' }}>Recarregar</button>
+        <h2 style={{ marginTop: '1rem' }}>Erro na Conexão</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Verifique se o seu JSON no GitHub é público e se a URL está correta.</p>
+        <code style={{ background: '#000', padding: '1rem', marginTop: '1rem', display: 'block', fontSize: '0.8rem' }}>{JSON_URL}</code>
+        <button onClick={() => window.location.reload()} className="btn-icon primary" style={{ marginTop: '2rem', padding: '0.5rem 2rem' }}>Tentar Novamente</button>
       </div>
     );
   }
@@ -101,75 +86,52 @@ const App = () => {
           <div className="logo-placeholder">NOC</div>
           <div>
             <h1 style={{ fontSize: '1.25rem', fontWeight: 800 }}>DASHBOARD OPERACIONAL</h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>MISSION CONTROL | v1.2 (Excel Mode)</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>MISSION CONTROL | v1.5 (Safe Mode)</p>
           </div>
         </div>
 
         <div className="header-info">
           <div className="sync-status">
             <div className={`status-dot ${isStale ? 'stale' : ''}`}></div>
-            <span>Sincro: {lastFetch?.toLocaleTimeString()}</span>
+            <span>Sync: {lastFetch?.toLocaleTimeString()}</span>
           </div>
-
-          <div className="clock">
-            {currentTime.toLocaleTimeString('pt-BR')}
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={exportCSV} className="btn-icon">
-              <Icons.Download size={18} />
-            </button>
-            <button onClick={toggleFullscreen} className="btn-icon primary">
-              <Icons.Maximize size={18} />
-            </button>
-          </div>
+          <div className="clock">{currentTime.toLocaleTimeString('pt-BR')}</div>
+          <button onClick={toggleFullscreen} className="btn-icon primary"><Icons.Maximize size={18} /></button>
         </div>
       </header>
 
-      <section className="kpi-grid">
-        {processed?.kpis.map((kpi, idx) => (
-          <KpiCard key={idx} {...kpi} />
-        ))}
-      </section>
+      {processed ? (
+        <>
+          <section className="kpi-grid">
+            {processed.kpis.map((kpi, idx) => <KpiCard key={idx} {...kpi} />)}
+          </section>
 
-      <main className="main-content">
-        <ProductionTable data={data || []} />
-
-        <aside className="sidebar">
-          <div className="sidebar-card">
-            <h3 className="sidebar-title"><Icons.Trophy size={16} /> Top P.U (Region)</h3>
-            <div className="sidebar-list">
-              {(processed?.production || [])
-                .filter(p => typeof p.col_3 === 'number')
-                .sort((a, b) => b.col_3 - a.col_3)
-                .slice(0, 5)
-                .map((emp, idx) => (
-                  <div key={idx} className="ranking-item">
-                    <span style={{ fontSize: '0.8rem' }}>{emp["PORTO ALEGRE"]}</span>
-                    <span style={{ color: 'var(--accent-color)', fontWeight: 700 }}>{(emp.col_3 || 0).toFixed(2)}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          <div className="sidebar-card">
-            <h3 className="sidebar-title"><Icons.Bell size={16} /> Alertas de Eficácia</h3>
-            <div className="sidebar-list">
-              {(processed?.production || [])
-                .filter(p => typeof p.col_28 === 'number' && p.col_28 < 0.60 && p["PORTO ALEGRE"] !== "TOTAL")
-                .map((p, idx) => (
-                  <div key={idx} className="alert-item alert-critical">
-                    Eficácia crítica: {p["PORTO ALEGRE"]} ({((p.col_28 || 0) * 100).toFixed(1)}%)
-                  </div>
-                ))}
-            </div>
-          </div>
-        </aside>
-      </main>
-
-      <footer style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-secondary)', padding: '0.2rem' }}>
-        Dashboard em tempo real • Conectado ao Repositório GitHub
-      </footer>
+          <main className="main-content">
+            <ProductionTable data={data || []} />
+            <aside className="sidebar">
+              <div className="sidebar-card">
+                <h3 className="sidebar-title"><Icons.Trophy size={16} /> Melhores P.U</h3>
+                <div className="sidebar-list">
+                  {processed.production
+                    .filter(p => p["PORTO ALEGRE"] !== "TOTAL" && p["PORTO ALEGRE"] !== "RS CAPITAL")
+                    .sort((a, b) => safeNum(b.col_3) - safeNum(a.col_3))
+                    .slice(0, 5)
+                    .map((emp, idx) => (
+                      <div key={idx} className="ranking-item">
+                        <span>{emp["PORTO ALEGRE"]}</span>
+                        <span style={{ color: 'var(--accent-color)', fontWeight: 700 }}>{safeNum(emp.col_3).toFixed(2)}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </aside>
+          </main>
+        </>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <p>Processando dados do Excel...</p>
+        </div>
+      )}
     </div>
   );
 };

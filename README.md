@@ -22,22 +22,6 @@ O dashboard foi ajustado para ler o formato padrão de exportação do seu Excel
 
 Certifique-se de que o seu VBA gere as chaves com esses nomes exatos.
 
-## 📦 Deploy na Vercel
-
-1. Crie um novo repositório no GitHub e suba este código.
-2. Acesse [vercel.com](https://vercel.com) e conecte seu repositório.
-3. Nas configurações de Build:
-   - Framework: **Vite**
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-4. Clique em **Deploy**.
-
-## 📺 Modo TV
-
-- O dashboard possui **auto-scroll** lento na tabela principal.
-- Clique no botão **Maximize** (canto superior direito) para entrar em Fullscreen.
-- Se os dados não forem atualizados por mais de 10 minutos, um alerta visual vermelho piscará no topo.
-
 ## ⚙️ Tecnologias
 
 - **Vite + React**
